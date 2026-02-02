@@ -7,8 +7,8 @@ RUN apk add --no-cache tini curl
 # Use existing 'node' user (UID 1000 already exists in node:alpine)
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci --only=production
+COPY package.json ./
+RUN npm install --omit=dev
 
 COPY --chown=node:node . .
 
