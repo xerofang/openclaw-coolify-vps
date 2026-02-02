@@ -1,4 +1,3 @@
-# Dashboard - Simple web interface
 FROM node:22-alpine
 
 LABEL coolify.managed="true"

@@ -2,29 +2,7 @@
 # Multi-stage build for smaller image size and faster deployments
 
 # ================================
-# Stage 1: Build dependencies
-# ================================
-FROM node:22-slim AS builder
-
-# Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    python3 \
-    make \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /build
-
-# Install OpenClaw and dependencies
-RUN npm install -g pnpm && \
-    npm pack openclaw && \
-    tar -xzf openclaw-*.tgz && \
-    cd package && \
-    pnpm install --prod
-
-# ================================
-# Stage 2: Production image
+# Stage 1: Production image
 # ================================
 FROM node:22-slim AS production
 
@@ -71,6 +49,8 @@ RUN mkdir -p \
     /home/openclaw/.npm-global \
     /home/openclaw/workspace \
     /home/openclaw/data \
+    /home/openclaw/config \
+    /home/openclaw/scripts \
     /home/openclaw/approval-queue/pending \
     /home/openclaw/approval-queue/processed \
     && chown -R openclaw:openclaw /home/openclaw
@@ -92,13 +72,15 @@ WORKDIR /home/openclaw
 RUN npm config set prefix '/home/openclaw/.npm-global' && \
     npm install -g openclaw
 
-# Copy configuration
+# Copy configuration (these directories must exist)
 COPY --chown=openclaw:openclaw ./config/ /home/openclaw/config/
-COPY --chown=openclaw:openclaw ./scripts/ /home/openclaw/scripts/
 
-# Health check script
+# Copy scripts if they exist (use wildcard to make optional)
+COPY --chown=openclaw:openclaw ./scripts/startup.sh /home/openclaw/scripts/startup.sh
 COPY --chown=openclaw:openclaw ./healthcheck.sh /home/openclaw/healthcheck.sh
-RUN chmod +x /home/openclaw/healthcheck.sh
+
+# Make scripts executable
+RUN chmod +x /home/openclaw/scripts/*.sh /home/openclaw/healthcheck.sh 2>/dev/null || true
 
 # Expose any needed ports (optional, for future API)
 EXPOSE 8080

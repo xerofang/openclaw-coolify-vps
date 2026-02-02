@@ -1,11 +1,4 @@
-# Instagram Service - VPS/Coolify Optimized
-FROM node:22-alpine AS builder
-
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-
-FROM node:22-alpine AS production
+FROM node:22-alpine
 
 LABEL coolify.managed="true"
 
@@ -16,7 +9,9 @@ RUN addgroup -g 1000 instauser && \
 
 WORKDIR /app
 
-COPY --from=builder /app/node_modules ./node_modules
+COPY package*.json ./
+RUN npm ci --only=production
+
 COPY --chown=instauser:instauser . .
 
 USER instauser

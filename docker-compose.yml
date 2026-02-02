@@ -1,11 +1,5 @@
 # OpenClaw - Coolify VPS Deployment
 # Compatible with Coolify's Docker Compose deployment system
-#
-# COOLIFY NOTES:
-# - This file is the single source of truth for Coolify deployments
-# - Environment variables should be defined here or in Coolify's UI
-# - Coolify will automatically create networks and handle proxy routing
-# - Labels are used for Traefik integration (Coolify's reverse proxy)
 
 services:
   # ===========================================
@@ -16,10 +10,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: openclaw-main
-    hostname: openclaw
     restart: unless-stopped
 
-    # Resource limits for VPS (adjust based on your VPS specs)
     deploy:
       resources:
         limits:
@@ -29,18 +21,15 @@ services:
           cpus: '0.25'
           memory: 256M
 
-    # Security settings
     security_opt:
       - no-new-privileges:true
 
-    # Persistent volumes
     volumes:
       - openclaw_data:/home/openclaw/data
       - openclaw_config:/home/openclaw/.openclaw
       - openclaw_workspace:/home/openclaw/workspace
       - approval_queue:/home/openclaw/approval-queue
 
-    # Environment variables (configure in Coolify UI or .env file)
     environment:
       - NODE_ENV=production
       - OPENCLAW_WORKSPACE=/home/openclaw/workspace
@@ -53,9 +42,7 @@ services:
 
     networks:
       - openclaw_internal
-      - coolify  # Coolify's proxy network
 
-    # Health check for Coolify monitoring
     healthcheck:
       test: ["CMD", "pgrep", "-f", "openclaw"]
       interval: 30s
@@ -63,10 +50,9 @@ services:
       retries: 3
       start_period: 30s
 
-    # Coolify/Traefik labels for reverse proxy
     labels:
       - "coolify.managed=true"
-      - "traefik.enable=false"  # OpenClaw doesn't need direct HTTP access
+      - "traefik.enable=false"
 
   # ===========================================
   # TELEGRAM BOT SERVICE
@@ -76,7 +62,6 @@ services:
       context: ./telegram-bot
       dockerfile: Dockerfile
     container_name: openclaw-telegram
-    hostname: telegram-bot
     restart: unless-stopped
 
     deploy:
@@ -133,7 +118,6 @@ services:
       context: ./instagram-service
       dockerfile: Dockerfile
     container_name: openclaw-instagram
-    hostname: instagram-service
     restart: unless-stopped
 
     deploy:
@@ -154,11 +138,11 @@ services:
     environment:
       - NODE_ENV=production
       - LOG_LEVEL=${LOG_LEVEL:-info}
-      - INSTAGRAM_ACCESS_TOKEN=${INSTAGRAM_ACCESS_TOKEN}
-      - INSTAGRAM_BUSINESS_ACCOUNT_ID=${INSTAGRAM_BUSINESS_ACCOUNT_ID}
+      - INSTAGRAM_ACCESS_TOKEN=${INSTAGRAM_ACCESS_TOKEN:-}
+      - INSTAGRAM_BUSINESS_ACCOUNT_ID=${INSTAGRAM_BUSINESS_ACCOUNT_ID:-}
       - INSTAGRAM_APP_ID=${INSTAGRAM_APP_ID:-}
       - INSTAGRAM_APP_SECRET=${INSTAGRAM_APP_SECRET:-}
-      - FREEPIK_API_KEY=${FREEPIK_API_KEY}
+      - FREEPIK_API_KEY=${FREEPIK_API_KEY:-}
       - MAX_POSTS_PER_DAY=${MAX_POSTS_PER_DAY:-10}
       - APPROVAL_QUEUE_PATH=/approval-queue
 
@@ -187,7 +171,6 @@ services:
       context: ./dashboard
       dockerfile: Dockerfile
     container_name: openclaw-dashboard
-    hostname: dashboard
     restart: unless-stopped
 
     deploy:
@@ -207,10 +190,10 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - DASHBOARD_AUTH_TOKEN=${DASHBOARD_AUTH_TOKEN:-}
+      - APPROVAL_QUEUE_PATH=/approval-queue
 
     networks:
       - openclaw_internal
-      - coolify
 
     depends_on:
       - telegram-bot
@@ -222,53 +205,12 @@ services:
       retries: 3
       start_period: 10s
 
-    # Coolify/Traefik labels for HTTPS access
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
-      - "traefik.http.routers.openclaw-dashboard.rule=Host(`${DASHBOARD_DOMAIN:-openclaw.example.com}`)"
       - "traefik.http.routers.openclaw-dashboard.entrypoints=https"
       - "traefik.http.routers.openclaw-dashboard.tls=true"
-      - "traefik.http.routers.openclaw-dashboard.tls.certresolver=letsencrypt"
       - "traefik.http.services.openclaw-dashboard.loadbalancer.server.port=3000"
-      # Security headers
-      - "traefik.http.middlewares.openclaw-headers.headers.stsSeconds=31536000"
-      - "traefik.http.middlewares.openclaw-headers.headers.stsIncludeSubdomains=true"
-      - "traefik.http.middlewares.openclaw-headers.headers.contentSecurityPolicy=default-src 'self'"
-      - "traefik.http.routers.openclaw-dashboard.middlewares=openclaw-headers"
-
-  # ===========================================
-  # REDIS CACHE (Optional - for performance)
-  # ===========================================
-  redis:
-    image: redis:7-alpine
-    container_name: openclaw-redis
-    hostname: redis
-    restart: unless-stopped
-
-    deploy:
-      resources:
-        limits:
-          cpus: '0.25'
-          memory: 256M
-
-    command: redis-server --appendonly yes --maxmemory 200mb --maxmemory-policy allkeys-lru
-
-    volumes:
-      - redis_data:/data
-
-    networks:
-      - openclaw_internal
-
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-    labels:
-      - "coolify.managed=true"
-      - "traefik.enable=false"
 
 # ===========================================
 # NETWORKS
@@ -276,11 +218,6 @@ services:
 networks:
   openclaw_internal:
     driver: bridge
-    internal: false  # Needs internet for APIs
-
-  coolify:
-    external: true
-    name: coolify  # Coolify's default network
 
 # ===========================================
 # VOLUMES
@@ -293,6 +230,4 @@ volumes:
   openclaw_workspace:
     driver: local
   approval_queue:
-    driver: local
-  redis_data:
     driver: local
