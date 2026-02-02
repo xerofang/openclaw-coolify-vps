@@ -1,0 +1,39 @@
+{
+  "version": "1.0",
+  "deployment": "vps-coolify",
+  "ai": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-4-20250514",
+    "maxTokens": 4096,
+    "temperature": 0.7
+  },
+  "integrations": {
+    "telegram": {
+      "enabled": true
+    },
+    "instagram": {
+      "enabled": true,
+      "requireApproval": true,
+      "maxPostsPerDay": 10
+    },
+    "webResearch": {
+      "enabled": true,
+      "maxSources": 10,
+      "timeoutSeconds": 30
+    }
+  },
+  "security": {
+    "rateLimiting": {
+      "enabled": true,
+      "maxRequestsPerMinute": 30
+    }
+  },
+  "workspace": {
+    "path": "/home/openclaw/workspace",
+    "maxFileSizeMB": 50
+  },
+  "logging": {
+    "level": "info",
+    "format": "json"
+  }
+}

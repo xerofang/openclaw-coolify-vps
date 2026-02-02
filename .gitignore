@@ -1,0 +1,28 @@
+# Secrets
+.env
+.env.local
+.env.production
+*.pem
+*.key
+
+# Node
+node_modules/
+.npm/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Data
+data/
+approval-queue/pending/*
+approval-queue/processed/*
+!approval-queue/*/.gitkeep

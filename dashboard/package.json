@@ -1,0 +1,13 @@
+{
+  "name": "openclaw-dashboard",
+  "version": "1.0.0",
+  "description": "Web dashboard for OpenClaw",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0"
+  }
+}
