@@ -4,17 +4,15 @@ LABEL coolify.managed="true"
 
 RUN apk add --no-cache tini curl
 
-RUN addgroup -g 1000 instauser && \
-    adduser -u 1000 -G instauser -s /bin/sh -D instauser
-
+# Use existing 'node' user (UID 1000 already exists in node:alpine)
 WORKDIR /app
 
 COPY package*.json ./
 RUN npm ci --only=production
 
-COPY --chown=instauser:instauser . .
+COPY --chown=node:node . .
 
-USER instauser
+USER node
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD node healthcheck.js || exit 1

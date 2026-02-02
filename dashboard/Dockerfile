@@ -4,17 +4,15 @@ LABEL coolify.managed="true"
 
 RUN apk add --no-cache tini wget
 
-RUN addgroup -g 1000 dashboard && \
-    adduser -u 1000 -G dashboard -s /bin/sh -D dashboard
-
+# Use existing 'node' user (UID 1000 already exists in node:alpine)
 WORKDIR /app
 
 COPY package*.json ./
 RUN npm ci --only=production
 
-COPY --chown=dashboard:dashboard . .
+COPY --chown=node:node . .
 
-USER dashboard
+USER node
 
 EXPOSE 3000
 
